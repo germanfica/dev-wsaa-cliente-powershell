@@ -1,29 +1,35 @@
 #
-# Configuracion de parametros
+# Parametros de linea de comandos:
 #
-# Archivo del certificado firmante a usar:
-$INCRTFIRMANTE="myCert.crt"
+# $Certificado: Archivo del certificado firmante a usar
+# $ClavePrivada: Archivo de clave privada a usar
+# $ServicioId: ID de servicio a acceder
+# $outXml: Archivo TRA a crear
+# $outCms: Archivo CMS a crear
+# $wsaaWsdl: URL del WSDL del WSAA
+[CmdletBinding()]
+Param(
+   [Parameter(Mandatory=$False)]
+   [string]$Certificado="myCert.crt",
+	
+   [Parameter(Mandatory=$False)]
+   [string]$ClavePrivada="myPriv.key",
+   
+   [Parameter(Mandatory=$False)]
+   [string]$ServicioId="wsfe",
+   
+   [Parameter(Mandatory=$False)]
+   [string]$outXml="myLoginTicketRequest.xml",   
+   
+   [Parameter(Mandatory=$False)]
+   [string]$outCms="myLoginTicketRequest.xml.cms",   
 
-# Archivo de clave privada a usar:
-$INPRIVATEKEY="myPriv.key" 
+   [Parameter(Mandatory=$False)]
+   [string]$wsaaWsdl = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms?WSDL"    
+)
 
-# ID de servicio a acceder:
-$INIDSERVICIO="wsfe" 
-
-# Archivo TRA a crear:
-$OUTTRAFILEXML="myLoginTicketRequest.xml"
-
-# Archivo CMS a crear:
-$OUTCMS="myLoginTicketRequest.xml.cms" 
-
-# WSDL del WSAA:
-$URLWSAAWSDL = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms?WSDL"
-
-#
-# No deberia ser necesario modificar nada a continuacion
-#
 # PASO 1: ARMAR EL TA
-$dtNow = [System.DateTime]::Now
+$dtNow = Get-Date 
 $xmlTA = New-Object System.XML.XMLDocument
 $xmlTA.LoadXml('<loginTicketRequest><header><uniqueId></uniqueId><generationTime></generationTime><expirationTime></expirationTime></header><service></service></loginTicketRequest>')
 $xmlUniqueId = $xmlTA.SelectSingleNode("//uniqueId")
@@ -32,14 +38,16 @@ $xmlExpTime = $xmlTA.SelectSingleNode("//expirationTime")
 $xmlService = $xmlTA.SelectSingleNode("//service")
 $xmlGenTime.InnerText = $dtNow.AddMinutes(-10).ToString("s")
 $xmlExpTime.InnerText = $dtNow.AddMinutes(+10).ToString("s")
-$xmlUniqueId.InnerText = $dtNow.ToString("yyMMdd")
-$xmlService.InnerText = $INIDSERVICIO
-$xmlTA.InnerXml | Out-File $OUTTRAFILEXML -Encoding ASCII
+$xmlUniqueId.InnerText = $dtNow.ToString("yyyyMMdd")
+$xmlService.InnerText = $ServicioId
+$seqNr = Get-Date -UFormat "%Y%m%d%H%S"
+$xmlTA.InnerXml | Out-File $seqNr-$outXml -Encoding ASCII
 
 # PASO 2: FIRMAR CMS
-openssl cms -sign -in $OUTTRAFILEXML -out $OUTCMS -signer $INCRTFIRMANTE -inkey $INPRIVATEKEY -nodetach -outform PEM
+openssl cms -sign -in $seqNr-$outXml -out $seqNr-$outCms -signer $Certificado -inkey $ClavePrivada -nodetach -outform PEM
 
 # PASO 3: INVOCAR AL WSAA
-$cms = ((Get-Content $OUTCMS -Raw).Replace("-----BEGIN CMS-----","")).Replace("-----END CMS-----","")
-$wsaa = New-WebServiceProxy -Uri $URLWSAAWSDL
-$wsaa.loginCms($cms)
+$cms = ((Get-Content $seqNr-$outCms -Raw).Replace("-----BEGIN CMS-----","")).Replace("-----END CMS-----","")
+$wsaa = New-WebServiceProxy -Uri $wsaaWsdl
+$wsaa.loginCms($cms) > $seqNr-myloginTicketResponse.xml
+type $seqNr-myloginTicketResponse.xml
