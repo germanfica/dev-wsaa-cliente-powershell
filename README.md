@@ -16,7 +16,13 @@ USO
 ---
 
 ```
-   wsaa-cliente.ps1
+   wsaa-cliente.ps1 
+      [ -Certificado unCertificado ] 
+      [ -ClavePrivada unaClavePrivada ]
+      [ -ServicioId unIdServicio ]
+      [ -OutXml unArchivoXml ]
+      [ -OutCms unArchivoXmlFirmado ]
+      [ -WsaaWsdl unaURL ]
 ``` 
 
    
