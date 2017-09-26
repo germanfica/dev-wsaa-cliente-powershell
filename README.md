@@ -28,6 +28,12 @@ EJEMPLOS
 ```
 
 
+
+```
+   .\wsaa-cliente.ps1 -Certificado unCert.crt -ClavePrivada unaPriv.key -ServicioId wsfe
+```
+
+
 ACUERDO DE USO
 --------------
 
