@@ -56,7 +56,17 @@ $xmlTA.InnerXml | Out-File $seqNr-$OutXml -Encoding ASCII
 openssl cms -sign -in $seqNr-$OutXml -out $seqNr-$OutCms -signer $Certificado -inkey $ClavePrivada -nodetach -outform PEM
 
 # PASO 3: INVOCAR AL WSAA
-$cms = ((Get-Content $seqNr-$OutCms -Raw).Replace("-----BEGIN CMS-----","")).Replace("-----END CMS-----","")
-$wsaa = New-WebServiceProxy -Uri $WsaaWsdl
-$wsaa.loginCms($cms) > $seqNr-loginTicketResponse.xml
-type $seqNr-loginTicketResponse.xml
+try
+{
+   $cms = ((Get-Content $seqNr-$OutCms -Raw).Replace("-----BEGIN CMS-----","")).Replace("-----END CMS-----","")
+   $wsaa = New-WebServiceProxy -Uri $WsaaWsdl -ErrorAction Stop
+   $wsaaResponse = $wsaa.loginCms($cms) 
+   $wsaaResponse > $seqNr-loginTicketResponse.xml 
+   $wsaaResponse
+}
+catch
+{
+   $errMsg = $_.Exception.Message
+   $errMsg > $seqNr-loginTicketResponse-ERROR.xml 
+   $errMsg
+}
