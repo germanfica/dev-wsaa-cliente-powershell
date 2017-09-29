@@ -6,10 +6,11 @@ Consume el metodo LoginCms ejecutando desde la Powershell de Windows.
 Muestra en stdout el login ticket response. 
 
 
-REQUERIMIENTOS DE PLATAFORMA
-----------------------------
+REQUERIMIENTOS
+--------------
 
 - Microsoft Powershell
+- OpenSSL
 
 
 USO
@@ -28,12 +29,6 @@ USO
    
 EJEMPLOS
 --------
-
-```
-   .\wsaa-cliente.ps1
-```
-
-
 
 ```
    .\wsaa-cliente.ps1 -Certificado unCert.crt -ClavePrivada unaPriv.key -ServicioId wsfe
