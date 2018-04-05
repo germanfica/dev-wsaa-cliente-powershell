@@ -20,7 +20,7 @@ Param(
    [string]$Certificado="myCert.crt",
 	
    [Parameter(Mandatory=$False)]
-   [string]$ClavePrivada="myPriv.key",
+   [string]$ClavePrivada="myPrivate.key",
    
    [Parameter(Mandatory=$False)]
    [string]$ServicioId="wsfe",
@@ -53,12 +53,15 @@ $seqNr = Get-Date -UFormat "%Y%m%d%H%S"
 $xmlTA.InnerXml | Out-File $seqNr-$OutXml -Encoding ASCII
 
 # PASO 2: FIRMAR CMS
-openssl cms -sign -in $seqNr-$OutXml -out $seqNr-$OutCms -signer $Certificado -inkey $ClavePrivada -nodetach -outform PEM
+openssl cms -sign -in $seqNr-$OutXml -signer $Certificado -inkey $ClavePrivada -nodetach -outform der -out $seqNr-$OutCms-DER
+
+# PASO 3: ENCODEAR EL CMS EN BASE 64
+openssl base64 -in $seqNr-$OutCms-DER -e -out $seqNr-$OutCms-DER-b64
 
 # PASO 3: INVOCAR AL WSAA
 try
 {
-   $cms = ((Get-Content $seqNr-$OutCms -Raw).Replace("-----BEGIN CMS-----","")).Replace("-----END CMS-----","")
+   $cms = Get-Content $seqNr-$OutCms-DER-b64 -Raw
    $wsaa = New-WebServiceProxy -Uri $WsaaWsdl -ErrorAction Stop
    $wsaaResponse = $wsaa.loginCms($cms) 
    $wsaaResponse > $seqNr-loginTicketResponse.xml 
