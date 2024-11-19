@@ -1,0 +1,5 @@
+myCert.crt
+myPrivate.key
+*.xml
+*.cms-DER
+*.cms-DER-b64
